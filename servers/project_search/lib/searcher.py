@@ -21,13 +21,14 @@ def find_files(
     pattern: str,
     directory: str | None = None,
     extension: str | None = None,
-) -> list[dict]:
+) -> tuple[list[dict], int]:
     root = settings.project_root / directory if directory else settings.project_root
     if not root.exists():
-        return []
+        return [], 0
 
     exts = (extension.lstrip("."),) if extension else settings.extensions
     results = []
+    files_checked = 0
 
     for path in root.rglob("*"):
         if not path.is_file():
@@ -37,12 +38,13 @@ def find_files(
             continue
         if path.suffix.lstrip(".") not in exts:
             continue
+        files_checked += 1
         if pattern.lower() in path.name.lower():
             results.append({"path": str(rel), "name": path.name})
         if len(results) >= settings.max_results:
             break
 
-    return results
+    return results, files_checked
 
 
 def grep_code(
@@ -50,14 +52,15 @@ def grep_code(
     directory: str | None = None,
     extensions: list[str] | None = None,
     max_results: int | None = None,
-) -> list[dict]:
+) -> tuple[list[dict], int]:
     root = settings.project_root / directory if directory else settings.project_root
     if not root.exists():
-        return []
+        return [], 0
 
     exts = tuple(e.lstrip(".") for e in extensions) if extensions else settings.extensions
     limit = max_results or settings.max_results
     results = []
+    files_searched = 0
 
     try:
         pattern = re.compile(query)
@@ -73,6 +76,7 @@ def grep_code(
         if path.suffix.lstrip(".") not in exts:
             continue
 
+        files_searched += 1
         try:
             with open(path, encoding="utf-8", errors="ignore") as f:
                 for lineno, line in enumerate(f, 1):
@@ -80,11 +84,11 @@ def grep_code(
                         snippet = line.strip()[:120]
                         results.append({"path": str(rel), "line": lineno, "snippet": snippet})
                         if len(results) >= limit:
-                            return results
+                            return results, files_searched
         except OSError:
             continue
 
-    return results
+    return results, files_searched
 
 
 _CLASS_PATTERN = re.compile(
@@ -94,15 +98,17 @@ _CLASS_PATTERN = re.compile(
 _NAMESPACE_PATTERN = re.compile(r"^namespace\s+([\w\\]+)\s*;")
 
 
-def find_class(class_name: str, kind: str | None = None) -> list[dict]:
+def find_class(class_name: str, kind: str | None = None) -> tuple[list[dict], int]:
     root = settings.project_root
     results = []
+    files_searched = 0
 
     for path in root.rglob("*.php"):
         rel = path.relative_to(root)
         if _is_excluded(rel):
             continue
 
+        files_searched += 1
         namespace = ""
         try:
             with open(path, encoding="utf-8", errors="ignore") as f:
@@ -125,7 +131,7 @@ def find_class(class_name: str, kind: str | None = None) -> list[dict]:
         except OSError:
             continue
 
-    return results
+    return results, files_searched
 
 
 def find_tests(source_path: str) -> list[dict]:

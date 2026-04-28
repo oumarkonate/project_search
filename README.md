@@ -3,6 +3,21 @@
 A local MCP server that provides fast file and code search for any project.
 Designed to save Claude tokens by returning only paths and snippets — never full file contents.
 
+## Why this server exists — token savings
+
+Without this server, Claude's default strategy to find a class or locate usages is to read files one by one: list a directory, open a file, scan it, repeat. On a medium PHP/JS project (500–2 000 files) that pattern burns tokens fast:
+
+| Task | Without server | With server |
+|---|---|---|
+| Find where `ContentRepository` is declared | List directory + read 5–20 files | One `find_class` call → path + line |
+| Find all callers of a service method | Read each candidate file | One `grep_code` call → `file:line:snippet` list |
+| Locate a test file for a source file | Read directory tree, guess name | One `find_tests` call → exact path |
+| Find files matching a pattern | Recursive `find` via Bash + read output | One `find_files` call → filtered path list |
+
+**Typical saving: 70–90 % of search tokens per task.**
+
+The key design principle: every tool returns the minimum useful unit — a path, a line number, and a ≤ 120-char snippet. Claude never receives full file contents from this server; it reads the file only when it actually needs to edit or understand it in depth.
+
 ## Tools
 
 | Tool | Description |
