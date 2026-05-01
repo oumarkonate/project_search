@@ -3,9 +3,7 @@ from pydantic import BaseModel
 from project_search.lib.searcher import find_files as _find_files
 from project_search.tools.common import TokenSavings
 
-# File listing costs less than reading content, but Claude still avoids a full
-# directory traversal + filtering by doing it here.
-_TOKENS_PER_FILE_CHECKED = 80
+_TOKENS_PER_FILE = 80
 
 
 class FileMatch(BaseModel):
@@ -36,7 +34,7 @@ def find_files(
     """
     raw, files_checked = _find_files(pattern, directory, extension)
     results = [FileMatch(**r) for r in raw]
-    estimated_saved = files_checked * _TOKENS_PER_FILE_CHECKED
+    estimated_saved = files_checked * _TOKENS_PER_FILE
     return FindFilesReport(
         results=results,
         token_savings=TokenSavings(

@@ -20,12 +20,68 @@ The key design principle: every tool returns the minimum useful unit — a path,
 
 ## Tools
 
+### Navigation & structure
+
 | Tool | Description |
 |------|-------------|
 | `find_files` | Find files by name substring or glob pattern |
+| `directory_tree` | Show project directory tree (configurable depth, respects excluded dirs) |
+| `read_file` | Read a file with optional line range — returns content and total line count |
+| `get_file_outline` | List all classes, methods and functions in a file with their line numbers |
+
+### Search
+
+| Tool | Description |
+|------|-------------|
 | `grep_code` | Search for text/regex in code, returns `file:line:snippet` |
-| `find_class` | Locate a PHP class/interface/trait/enum declaration |
-| `find_tests` | Find test files corresponding to a source file (PHPUnit, Jest, Playwright) |
+| `grep_with_context` | Like `grep_code` but includes N lines before/after each match (default: 3, max: 10) |
+| `count_matches` | Count occurrences of a pattern without returning all results — useful before a full grep |
+
+### PHP & framework
+
+| Tool | Description | Requirements |
+|------|-------------|--------------|
+| `find_class` | Locate a PHP class/interface/trait/enum declaration by name | PHP files |
+| `find_method` | Locate method/function declarations by name | PHP + JS/TS files |
+| `find_implementations` | Find all PHP classes implementing a given interface | PHP files |
+| `find_extends` | Find all PHP classes extending a given class | PHP files |
+| `find_route` | Find Symfony controllers/actions by route pattern | Symfony 5.2+ with PHP 8 `#[Route]` attributes |
+| `find_tests` | Find test files for a source file (PHPUnit, Jest, Playwright) | PHP / JS / TS files |
+| `find_usages` | Find all references to a symbol across the project | All configured extensions |
+
+### Git-aware search
+
+| Tool | Description | Requirements |
+|------|-------------|--------------|
+| `git_changed_files` | List files modified by git (unstaged, staged, or by commit SHA) | Git repository |
+| `grep_changed` | Grep only in files modified by git — focus on the current diff | Git repository |
+
+## Notes per tool
+
+### `read_file`
+Returns up to 200 lines by default when no range is specified. Use `start_line`/`end_line` to target a specific section. Line numbers are 1-indexed and match the numbers returned by `grep_code` and `grep_with_context`.
+
+### `get_file_outline`
+Uses regex-based parsing (not AST). PHP support is comprehensive: classes, interfaces, traits, enums, and methods with visibility/modifiers. JS/TS support covers `function` declarations and `class` definitions; arrow functions assigned to `const`/`let` are also detected. Class method bodies in JS/TS are not extracted.
+
+### `grep_with_context`
+Context lines are capped at 10 to avoid token bloat. When working on large codebases, combine with a reduced `max_results` value.
+
+### `find_usages`
+Searches by whole-word match (`\bSymbolName\b`). Results include matches in comments and string literals — this is a text search, not an AST traversal. Suitable for navigation and discovery.
+
+### `find_implementations` and `find_extends`
+PHP-only. Detects direct declarations on a single line (e.g. `implements InterfaceA, InterfaceB`). Multi-line declarations are not detected. `find_extends` returns direct children only — call it recursively to walk a full hierarchy.
+
+### `find_route`
+**Symfony only.** Supports PHP 8 attribute syntax (`#[Route('/path', methods: ['GET'])]`) introduced in Symfony 5.2. Does **not** support:
+- Doctrine annotation style (`@Route`) — deprecated since Symfony 6.x
+- YAML routing (`config/routes.yaml`)
+- XML routing
+- Laravel routes (`routes/web.php`)
+
+### `git_changed_files` and `grep_changed`
+Require `PROJECT_SEARCH_ROOT` to be inside a git repository. If not, a clear error message is returned. When using inside a monorepo where `PROJECT_SEARCH_ROOT` is a sub-directory, paths are resolved relative to the configured root.
 
 ## Installation
 
@@ -83,11 +139,35 @@ find_files("ContentService", extension="php")
 grep_code("implements ContentRepositoryInterface", extensions=["php"])
 → src/Domain/Repository/ContentRepository.php:41 — class ContentRepository implements ...
 
+grep_with_context("class ContentRepository", context_lines=2)
+→ src/Domain/Repository/ContentRepository.php:41
+  before: ["<?php", "namespace Domain\\Repository;"]
+  snippet: "class ContentRepository implements ContentRepositoryInterface"
+  after:  ["{", "    public function __construct("]
+
 find_class("ContentRepository")
 → path: src/Domain/Repository/ContentRepository.php, line: 41, namespace: Domain\Repository
 
+get_file_outline("src/Domain/Services/ContentService.php")
+→ [{kind: "class", name: "ContentService", line: 12},
+   {kind: "method", name: "findById", line: 20, visibility: "public"},
+   {kind: "method", name: "save", line: 35, visibility: "public"}]
+
+find_implementations("ContentRepositoryInterface")
+→ [{path: "src/Domain/Repository/ContentRepository.php", line: 41, class_name: "ContentRepository"}]
+
+find_route("/api/content")
+→ [{path: "src/Controller/ContentController.php", line: 18, route: "/api/content/{id}",
+    methods: ["GET"], class_name: "ContentController", action: "show"}]
+
 find_tests("src/Domain/Services/Content.php")
 → tests/Domain/Services/ContentTest.php (phpunit)
+
+git_changed_files(scope="unstaged")
+→ [{path: "src/Domain/Services/ContentService.php", status: "M"}]
+
+grep_changed("TODO", scope="unstaged")
+→ src/Domain/Services/ContentService.php:57 — // TODO: handle empty result
 ```
 
 ## Architecture
