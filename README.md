@@ -110,11 +110,10 @@ Add to `~/.config/Claude/claude_desktop_config.json` (Linux) or `~/Library/Appli
 {
   "mcpServers": {
     "project-search": {
-      "command": "/absolute/path/to/project_search/.venv/bin/python3",
+      "command": "/absolute/path/to/mcp/servers/project_search/.venv/bin/python3",
       "args": ["-m", "project_search"],
-      "cwd": "/absolute/path/to/project_search/servers",
       "env": {
-        "PYTHONPATH": "/absolute/path/to/project_search/servers"
+        "PYTHONPATH": "/absolute/path/to/mcp/servers"
       }
     }
   }
@@ -175,7 +174,7 @@ grep_changed("TODO", scope="unstaged")
 Inspired by [ckeditor-audit](https://github.com/...) — same Python + MCP SDK stack.
 
 ```
-servers/project_search/
+project_search/
 ├── __main__.py     # entry point
 ├── server.py       # MCPServer + tool registration
 ├── config.py       # Settings from env vars

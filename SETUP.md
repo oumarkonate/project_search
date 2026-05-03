@@ -47,18 +47,17 @@ Add the `project-search` entry under `mcpServers`:
 {
   "mcpServers": {
     "project-search": {
-      "command": "/absolute/path/to/project_search/.venv/bin/python3",
+      "command": "/absolute/path/to/mcp/servers/project_search/.venv/bin/python3",
       "args": ["-m", "project_search"],
-      "cwd": "/absolute/path/to/project_search/servers",
       "env": {
-        "PYTHONPATH": "/absolute/path/to/project_search/servers"
+        "PYTHONPATH": "/absolute/path/to/mcp/servers"
       }
     }
   }
 }
 ```
 
-> Replace `/absolute/path/to/project_search` with the actual path where you cloned the repo.
+> `PYTHONPATH` must point to the **parent directory** of `project_search/` so that `python -m project_search` can resolve the package.
 
 ## Step 4 — Restart Claude Code
 
@@ -69,7 +68,7 @@ Reload Claude Code to pick up the new MCP server. The `project-search` tools wil
 Test the server manually:
 
 ```bash
-cd servers
-PYTHONPATH=$(pwd) ../. venv/bin/python -m project_search
+cd /absolute/path/to/mcp/servers
+PYTHONPATH=$(pwd) project_search/.venv/bin/python -m project_search
 # Should hang waiting for stdio input — that's correct
 ```
