@@ -102,23 +102,48 @@ cp .env.example .env
 # Edit .env and set PROJECT_SEARCH_ROOT to your project path
 ```
 
-### Register in Claude Code
+### Register in Claude Desktop / Claude Code
 
-Add to `~/.config/Claude/claude_desktop_config.json` (Linux) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+Config file locations:
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+**Linux / macOS**
 
 ```json
 {
   "mcpServers": {
-    "project-search": {
-      "command": "/absolute/path/to/mcp/servers/project_search/.venv/bin/python3",
+    "project_search": {
+      "command": "/absolute/path/to/mcp/project_search/.venv/bin/python3",
       "args": ["-m", "project_search"],
       "env": {
-        "PYTHONPATH": "/absolute/path/to/mcp/servers"
+        "PYTHONPATH": "/absolute/path/to/mcp"
       }
     }
   }
 }
 ```
+
+**Windows**
+
+```json
+{
+  "mcpServers": {
+    "project_search": {
+      "command": "C:\\path\\to\\mcp\\project_search\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "project_search"],
+      "env": {
+        "PYTHONPATH": "C:\\path\\to\\mcp"
+      }
+    }
+  }
+}
+```
+
+> `PYTHONPATH` must point to the **parent directory** of `project_search/`. `PROJECT_SEARCH_ROOT` is loaded from `.env` automatically.
+
+Ready-to-copy templates: `claude_desktop_config.json.linux.example` and `claude_desktop_config.json.windows.example`.
 
 ## Configuration
 

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "project_search": {
+      "command": "C:\\path\\to\\mcp\\project_search\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "project_search"],
+      "env": {
+        "PYTHONPATH": "C:\\path\\to\\mcp",
+        "PROJECT_SEARCH_ROOT": "C:\\path\\to\\your\\project"
+      }
+    }
+  }
+}

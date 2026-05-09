@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "project_search": {
+      "command": "/absolute/path/to/mcp/project_search/.venv/bin/python3",
+      "args": ["-m", "project_search"],
+      "env": {
+        "PYTHONPATH": "/absolute/path/to/mcp",
+        "PROJECT_SEARCH_ROOT": "/absolute/path/to/your/project"
+      }
+    }
+  }
+}
